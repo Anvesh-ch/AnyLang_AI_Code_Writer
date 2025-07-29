@@ -1,0 +1,227 @@
+/* Custom CSS for AnyLang AI Code Writer */
+
+/* Main header styling */
+.main-header {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #1f77b4;
+    text-align: center;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.sub-header {
+    font-size: 1.5rem;
+    color: #666;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+/* Feature cards */
+.feature-card {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    margin: 1rem 0;
+    border-left: 4px solid #1f77b4;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Success and error messages */
+.success-message {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+    border-left: 4px solid #28a745;
+}
+
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+    border-left: 4px solid #dc3545;
+}
+
+/* Code blocks */
+.code-block {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1rem 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* Buttons */
+.stButton > button {
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+}
+
+.stButton > button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Sidebar styling */
+.sidebar .sidebar-content {
+    background-color: #f8f9fa;
+}
+
+/* Tabs styling */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    border-radius: 0.5rem;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: #1f77b4;
+    color: white;
+}
+
+/* Text areas */
+.stTextArea textarea {
+    border-radius: 0.5rem;
+    border: 2px solid #e9ecef;
+    transition: border-color 0.2s ease-in-out;
+}
+
+.stTextArea textarea:focus {
+    border-color: #1f77b4;
+    box-shadow: 0 0 0 0.2rem rgba(31, 119, 180, 0.25);
+}
+
+/* Select boxes */
+.stSelectbox select {
+    border-radius: 0.5rem;
+    border: 2px solid #e9ecef;
+}
+
+/* Expanders */
+.streamlit-expanderHeader {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    border: 1px solid #e9ecef;
+    font-weight: 600;
+}
+
+/* Code syntax highlighting */
+.highlight {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1rem 0;
+    overflow-x: auto;
+}
+
+/* Loading spinner */
+.stSpinner > div {
+    border-color: #1f77b4;
+}
+
+/* Info boxes */
+.stAlert {
+    border-radius: 0.5rem;
+    border-left: 4px solid;
+}
+
+.stAlert[data-baseweb="notification"] {
+    border-radius: 0.5rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .main-header {
+        font-size: 2rem;
+    }
+    
+    .sub-header {
+        font-size: 1.2rem;
+    }
+    
+    .feature-card {
+        padding: 1rem;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .feature-card {
+        background-color: #2d3748;
+        color: #e2e8f0;
+    }
+    
+    .code-block {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .stTextArea textarea {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .stSelectbox select {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+}
+
+/* Animation for code generation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.code-result {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+} 
