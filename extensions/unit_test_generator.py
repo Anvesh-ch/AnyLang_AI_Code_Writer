@@ -25,14 +25,9 @@ def generate_unit_tests(code: str, language: str, model: str = "groq") -> dict:
     prompt = format_prompt(UNIT_TEST_PROMPT, language=language, code=code)
     
     try:
-        # Use the same model as the main app
-        if model == "groq":
-            return llm_client._generate_with_groq(prompt, language)
-        elif model == "gemini":
-            return llm_client._generate_with_gemini(prompt, language)
-        else:
-            # Fallback
-            return llm_client.generate_code(prompt, language, model)
+        # Use the generate_code method which handles the correct models
+        result = llm_client.generate_code(prompt, language, model)
+        return result
     except Exception as e:
         return {
             "code": f"# Error generating unit tests: {str(e)}",

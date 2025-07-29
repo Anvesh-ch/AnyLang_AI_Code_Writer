@@ -83,9 +83,9 @@ class LLMClient:
     def _generate_with_groq(self, prompt: str, language: str) -> Dict[str, Any]:
         """Generate code using Groq API."""
         try:
-            # Use Mixtral-8x7B for code generation (fast and free)
+            # Use llama3-70b-8192 (current recommended model) instead of decommissioned mixtral-8x7b-32768
             response = self.groq_client.chat.completions.create(
-                model="mixtral-8x7b-32768",
+                model="llama3-70b-8192",  # Updated to current model
                 messages=[
                     {
                         "role": "system",
@@ -104,7 +104,7 @@ class LLMClient:
             return {
                 "code": code,
                 "language": language,
-                "model": "groq-mixtral-8x7b",
+                "model": "groq-llama3-70b-8192",
                 "tokens_used": response.usage.total_tokens if response.usage else None
             }
         except Exception as e:
@@ -174,7 +174,7 @@ Provide a clear, educational explanation that helps understand what each part do
         """Explain code using Groq API."""
         try:
             response = self.groq_client.chat.completions.create(
-                model="mixtral-8x7b-32768",
+                model="llama3-70b-8192",  # Updated to current model
                 messages=[
                     {
                         "role": "system",
@@ -193,7 +193,7 @@ Provide a clear, educational explanation that helps understand what each part do
             return {
                 "explanation": explanation,
                 "language": language,
-                "model": "groq-mixtral-8x7b",
+                "model": "groq-llama3-70b-8192",
                 "tokens_used": response.usage.total_tokens if response.usage else None
             }
         except Exception as e:
@@ -268,7 +268,7 @@ Write clean, idiomatic {target_language} code that performs the same function.""
         """Translate code using Groq API."""
         try:
             response = self.groq_client.chat.completions.create(
-                model="mixtral-8x7b-32768",
+                model="llama3-70b-8192",  # Updated to current model
                 messages=[
                     {
                         "role": "system",
@@ -288,7 +288,7 @@ Write clean, idiomatic {target_language} code that performs the same function.""
                 "translated_code": translated_code,
                 "source_language": source_language,
                 "target_language": target_language,
-                "model": "groq-mixtral-8x7b",
+                "model": "groq-llama3-70b-8192",
                 "tokens_used": response.usage.total_tokens if response.usage else None
             }
         except Exception as e:
