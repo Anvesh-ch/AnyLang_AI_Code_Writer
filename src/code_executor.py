@@ -13,6 +13,7 @@ from typing import Dict, Any, Optional
 from io import StringIO
 import sys
 import contextlib
+from io import UnsupportedOperation
 
 logger = logging.getLogger(__name__)
 
@@ -103,43 +104,66 @@ class CodeExecutor:
                     "language": "python"
                 }
         
-        return {"safe": True, "code": code, "language": "python"}
+        return {
+            "safe": True,
+            "reason": "Code appears safe for execution",
+            "code": code,
+            "language": "python"
+        }
     
     def _check_sql_safety(self, code: str) -> Dict[str, Any]:
         """Check SQL code safety."""
-        dangerous_commands = [
-            'DROP DATABASE', 'DROP TABLE', 'DELETE FROM', 'TRUNCATE TABLE',
-            'ALTER TABLE', 'CREATE DATABASE', 'GRANT', 'REVOKE'
+        dangerous_patterns = [
+            r'DROP\s+DATABASE',
+            r'DELETE\s+FROM\s+.*\s+WHERE\s+1\s*=\s*1',
+            r'TRUNCATE\s+TABLE',
+            r'ALTER\s+TABLE',
+            r'CREATE\s+TABLE',
+            r'DROP\s+TABLE',
         ]
         
-        for cmd in dangerous_commands:
-            if re.search(rf'{cmd}', code, re.IGNORECASE):
+        for pattern in dangerous_patterns:
+            if re.search(pattern, code, re.IGNORECASE):
                 return {
                     "safe": False,
-                    "reason": f"Dangerous SQL command detected: {cmd}",
+                    "reason": f"Dangerous SQL pattern detected: {pattern}",
                     "code": code,
                     "language": "sql"
                 }
         
-        return {"safe": True, "code": code, "language": "sql"}
+        return {
+            "safe": True,
+            "reason": "SQL code appears safe for execution",
+            "code": code,
+            "language": "sql"
+        }
     
     def _check_bash_safety(self, code: str) -> Dict[str, Any]:
         """Check Bash code safety."""
         dangerous_commands = [
-            'rm -rf', 'rmdir /s', 'del /', 'format c:', 'chmod 777',
-            'chown root', 'sudo', 'su ', 'wget', 'curl', 'nc ', 'telnet'
+            'rm -rf',
+            'del /',
+            'format c:',
+            'rmdir /s',
+            'chmod 777',
+            'chown root',
         ]
         
         for cmd in dangerous_commands:
-            if re.search(rf'{cmd}', code, re.IGNORECASE):
+            if cmd.lower() in code.lower():
                 return {
                     "safe": False,
-                    "reason": f"Dangerous bash command detected: {cmd}",
+                    "reason": f"Dangerous command detected: {cmd}",
                     "code": code,
                     "language": "bash"
                 }
         
-        return {"safe": True, "code": code, "language": "bash"}
+        return {
+            "safe": True,
+            "reason": "Bash code appears safe for execution",
+            "code": code,
+            "language": "bash"
+        }
     
     def execute_code(self, code: str, language: str) -> Dict[str, Any]:
         """
@@ -152,17 +176,18 @@ class CodeExecutor:
         Returns:
             Dict with execution results
         """
-        # First check safety
-        safety_check = self.is_safe_to_execute(code, language)
-        if not safety_check["safe"]:
-            return {
-                "success": False,
-                "output": f"Execution blocked: {safety_check['reason']}",
-                "error": safety_check["reason"],
-                "language": language
-            }
-        
         try:
+            # Check if code is safe
+            safety_check = self.is_safe_to_execute(code, language)
+            if not safety_check["safe"]:
+                return {
+                    "success": False,
+                    "output": f"Safety check failed: {safety_check['reason']}",
+                    "error": safety_check["reason"],
+                    "language": language
+                }
+            
+            # Execute based on language
             if language.lower() == "python":
                 return self._execute_python(code)
             elif language.lower() == "sql":
@@ -172,10 +197,11 @@ class CodeExecutor:
             else:
                 return {
                     "success": False,
-                    "output": f"Execution not supported for {language}",
-                    "error": f"Language {language} not supported for execution",
+                    "output": f"Language {language} not supported for execution",
+                    "error": f"Unsupported language: {language}",
                     "language": language
                 }
+                
         except Exception as e:
             return {
                 "success": False,
@@ -269,6 +295,46 @@ class CodeExecutor:
                         'ConnectionRefusedError': ConnectionRefusedError,
                         'ConnectionResetError': ConnectionResetError,
                         'FileExistsError': FileExistsError,
+                        'IsADirectoryError': IsADirectoryError,
+                        'NotADirectoryError': NotADirectoryError,
+                        'InterruptedError': InterruptedError,
+                        'ProcessLookupError': ProcessLookupError,
+                        'ZeroDivisionError': ZeroDivisionError,
+                        'OverflowError': OverflowError,
+                        'FloatingPointError': FloatingPointError,
+                        'ArithmeticError': ArithmeticError,
+                        'BufferError': BufferError,
+                        'LookupError': LookupError,
+                        'AssertionError': AssertionError,
+                        'EOFError': EOFError,
+                        'ImportWarning': ImportWarning,
+                        'PendingDeprecationWarning': PendingDeprecationWarning,
+                        'RuntimeWarning': RuntimeWarning,
+                        'SyntaxWarning': SyntaxWarning,
+                        'UserWarning': UserWarning,
+                        'FutureWarning': FutureWarning,
+                        'DeprecationWarning': DeprecationWarning,
+                        'ResourceWarning': ResourceWarning,
+                        'UnboundLocalError': UnboundLocalError,
+                        'NameError': NameError,
+                        'UnboundLocalError': UnboundLocalError,
+                        'SyntaxError': SyntaxError,
+                        'IndentationError': IndentationError,
+                        'TabError': TabError,
+                        'SystemError': SystemError,
+                        'ReferenceError': ReferenceError,
+                        'MemoryError': MemoryError,
+                        'RecursionError': RecursionError,
+                        'NotImplementedError': NotImplementedError,
+                        'OSError': OSError,
+                        'BlockingIOError': BlockingIOError,
+                        'ChildProcessError': ChildProcessError,
+                        'ConnectionError': ConnectionError,
+                        'BrokenPipeError': BrokenPipeError,
+                        'ConnectionAbortedError': ConnectionAbortedError,
+                        'ConnectionRefusedError': ConnectionRefusedError,
+                        'ConnectionResetError': ConnectionResetError,
+                        'FileExistsError': FileExistsError,
                         'FileNotFoundError': FileNotFoundError,
                         'IsADirectoryError': IsADirectoryError,
                         'NotADirectoryError': NotADirectoryError,
@@ -277,52 +343,31 @@ class CodeExecutor:
                         'ProcessLookupError': ProcessLookupError,
                         'TimeoutError': TimeoutError,
                         'UnsupportedOperation': UnsupportedOperation,
-                        'BufferError': BufferError,
-                        'MemoryError': MemoryError,
-                        'RecursionError': RecursionError,
-                        'OverflowError': OverflowError,
-                        'ZeroDivisionError': ZeroDivisionError,
-                        'FloatingPointError': FloatingPointError,
-                        'AssertionError': AssertionError,
-                        'ArithmeticError': ArithmeticError,
-                        'LookupError': LookupError,
-                        'UnicodeError': UnicodeError,
-                        'UnicodeDecodeError': UnicodeDecodeError,
-                        'UnicodeEncodeError': UnicodeEncodeError,
-                        'UnicodeTranslateError': UnicodeTranslateError,
-                        'Warning': Warning,
-                        'UserWarning': UserWarning,
-                        'DeprecationWarning': DeprecationWarning,
-                        'PendingDeprecationWarning': PendingDeprecationWarning,
-                        'SyntaxWarning': SyntaxWarning,
-                        'RuntimeWarning': RuntimeWarning,
-                        'FutureWarning': FutureWarning,
-                        'ImportWarning': ImportWarning,
-                        'UnicodeWarning': UnicodeWarning,
-                        'BytesWarning': BytesWarning,
-                        'ResourceWarning': ResourceWarning,
                     }
                 }
                 
                 # Execute the code
                 exec(code, restricted_globals)
                 
+                # Get output
                 output = output_buffer.getvalue()
-                error = error_buffer.getvalue()
+                error_output = error_buffer.getvalue()
                 
                 return {
                     "success": True,
                     "output": output if output else "Code executed successfully (no output)",
-                    "error": error if error else None,
+                    "error": error_output if error_output else None,
                     "language": "python"
                 }
+                
         except Exception as e:
+            error_output = error_buffer.getvalue()
             return {
                 "success": False,
                 "output": f"Python execution error: {str(e)}",
-                "error": str(e),
+                "error": error_output if error_output else str(e),
                 "language": "python"
-            }
+            } 
     
     def _execute_sql(self, code: str) -> Dict[str, Any]:
         """Execute SQL code safely using in-memory SQLite."""

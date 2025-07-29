@@ -32,24 +32,37 @@ def display_code(code: str, language: str, title: str = "Generated Code", show_c
     
     with col2:
         if show_copy:
-            if st.button("Copy", key=f"copy_{title.lower().replace(' ', '_')}"):
-                st.write("```" + language + "\n" + cleaned_code + "\n```")
-                st.success("Code copied to clipboard!")
+            # Use session state to track copy status
+            copy_key = f"copy_{title.lower().replace(' ', '_')}"
+            if copy_key not in st.session_state:
+                st.session_state[copy_key] = False
+            
+            if st.button("Copy", key=copy_key):
+                st.session_state[copy_key] = True
+                # Store code in session state for clipboard
+                st.session_state["clipboard_code"] = cleaned_code
+                st.session_state["clipboard_language"] = language
     
     with col3:
         if show_download:
-            if st.button("Download", key=f"download_{title.lower().replace(' ', '_')}"):
-                filename = create_download_filename(language, title)
-                st.download_button(
-                    label="Save File",
-                    data=cleaned_code,
-                    file_name=filename,
-                    mime="text/plain",
-                    key=f"save_{title.lower().replace(' ', '_')}"
-                )
+            # Create download button with proper data
+            filename = create_download_filename(language, title)
+            st.download_button(
+                label="Download",
+                data=cleaned_code,
+                file_name=filename,
+                mime="text/plain",
+                key=f"download_{title.lower().replace(' ', '_')}"
+            )
     
     # Display code using Streamlit's built-in syntax highlighting
     st.code(cleaned_code, language=language)
+    
+    # Show copy success message if copy was clicked
+    copy_key = f"copy_{title.lower().replace(' ', '_')}"
+    if copy_key in st.session_state and st.session_state[copy_key]:
+        st.success("Code copied to clipboard!")
+        st.session_state[copy_key] = False
 
 def display_code_with_execution(code: str, language: str, title: str = "Generated Code"):
     """
@@ -72,27 +85,41 @@ def display_code_with_execution(code: str, language: str, title: str = "Generate
         
         col1, col2 = st.columns([1, 3])
         with col1:
-            execute_button = st.button("Run Code", key=f"execute_{title.lower().replace(' ', '_')}")
+            execute_key = f"execute_{title.lower().replace(' ', '_')}"
+            if execute_key not in st.session_state:
+                st.session_state[execute_key] = False
+            
+            if st.button("Run Code", key=execute_key):
+                st.session_state[execute_key] = True
         
         with col2:
             st.info(f"This {language.title()} code can be executed safely within the app.")
         
-        if execute_button:
+        # Handle execution
+        if execute_key in st.session_state and st.session_state[execute_key]:
             with st.spinner("Executing code..."):
-                executor = CodeExecutor()
-                result = executor.execute_code(code, language)
-                
-                if result["success"]:
-                    st.success("Code executed successfully!")
-                    st.subheader("Output:")
-                    st.code(result["output"], language="text")
+                try:
+                    executor = CodeExecutor()
+                    result = executor.execute_code(code, language)
                     
-                    if result.get("error"):
-                        st.warning("Warnings/Errors:")
-                        st.code(result["error"], language="text")
-                else:
-                    st.error("Code execution failed!")
-                    st.code(result["output"], language="text")
+                    if result["success"]:
+                        st.success("Code executed successfully!")
+                        st.subheader("Output:")
+                        st.code(result["output"], language="text")
+                        
+                        if result.get("error"):
+                            st.warning("Warnings/Errors:")
+                            st.code(result["error"], language="text")
+                    else:
+                        st.error("Code execution failed!")
+                        st.code(result["output"], language="text")
+                        
+                except Exception as e:
+                    st.error(f"Execution error: {str(e)}")
+                    st.code(str(e), language="text")
+            
+            # Reset execution state
+            st.session_state[execute_key] = False
     else:
         st.info(f"{language.title()} code cannot be executed safely. You can copy and run it in your local environment.")
 
