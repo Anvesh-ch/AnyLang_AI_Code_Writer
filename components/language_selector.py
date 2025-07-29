@@ -98,10 +98,10 @@ def language_info_display(language: str):
     from src.utils import get_language_info
     info = get_language_info(language)
     
-    with st.expander(f"ℹ️ About {info['name']}", expanded=False):
+    with st.expander(f"About {info['name']}", expanded=False):
         st.write(f"**Description:** {info['description']}")
         st.write(f"**File Extension:** {info['extension']}")
-        st.write(f"**Safe Execution:** {'✅ Supported' if info['executable'] else '❌ Not supported'}")
+        st.write(f"**Safe Execution:** {'Supported' if info['executable'] else 'Not supported'}")
         
         if info['executable']:
             st.info("This language supports safe code execution within the app.")

@@ -4,7 +4,7 @@ Provides syntax highlighting and copy functionality for code.
 """
 
 import streamlit as st
-from src.utils import highlight_code, clean_code, get_file_extension, create_download_filename
+from src.utils import clean_code, get_file_extension, create_download_filename
 
 def display_code(code: str, language: str, title: str = "Generated Code", show_copy: bool = True, show_download: bool = True):
     """
@@ -32,13 +32,13 @@ def display_code(code: str, language: str, title: str = "Generated Code", show_c
     
     with col2:
         if show_copy:
-            if st.button("📋 Copy", key=f"copy_{title.lower().replace(' ', '_')}"):
+            if st.button("Copy", key=f"copy_{title.lower().replace(' ', '_')}"):
                 st.write("```" + language + "\n" + cleaned_code + "\n```")
                 st.success("Code copied to clipboard!")
     
     with col3:
         if show_download:
-            if st.button("💾 Download", key=f"download_{title.lower().replace(' ', '_')}"):
+            if st.button("Download", key=f"download_{title.lower().replace(' ', '_')}"):
                 filename = create_download_filename(language, title)
                 st.download_button(
                     label="Save File",
@@ -48,14 +48,8 @@ def display_code(code: str, language: str, title: str = "Generated Code", show_c
                     key=f"save_{title.lower().replace(' ', '_')}"
                 )
     
-    # Display code with syntax highlighting
-    try:
-        highlighted_code = highlight_code(cleaned_code, language)
-        st.markdown(highlighted_code, unsafe_allow_html=True)
-    except Exception as e:
-        # Fallback to plain text if highlighting fails
-        st.code(cleaned_code, language=language)
-        st.warning(f"Syntax highlighting failed: {str(e)}")
+    # Display code using Streamlit's built-in syntax highlighting
+    st.code(cleaned_code, language=language)
 
 def display_code_with_execution(code: str, language: str, title: str = "Generated Code"):
     """
@@ -78,10 +72,10 @@ def display_code_with_execution(code: str, language: str, title: str = "Generate
         
         col1, col2 = st.columns([1, 3])
         with col1:
-            execute_button = st.button("▶️ Run Code", key=f"execute_{title.lower().replace(' ', '_')}")
+            execute_button = st.button("Run Code", key=f"execute_{title.lower().replace(' ', '_')}")
         
         with col2:
-            st.info(f"💡 This {language.title()} code can be executed safely within the app.")
+            st.info(f"This {language.title()} code can be executed safely within the app.")
         
         if execute_button:
             with st.spinner("Executing code..."):
@@ -89,18 +83,18 @@ def display_code_with_execution(code: str, language: str, title: str = "Generate
                 result = executor.execute_code(code, language)
                 
                 if result["success"]:
-                    st.success("✅ Code executed successfully!")
+                    st.success("Code executed successfully!")
                     st.subheader("Output:")
                     st.code(result["output"], language="text")
                     
                     if result.get("error"):
-                        st.warning("⚠️ Warnings/Errors:")
+                        st.warning("Warnings/Errors:")
                         st.code(result["error"], language="text")
                 else:
-                    st.error("❌ Code execution failed!")
+                    st.error("Code execution failed!")
                     st.code(result["output"], language="text")
     else:
-        st.info(f"💡 {language.title()} code cannot be executed safely. You can copy and run it in your local environment.")
+        st.info(f"{language.title()} code cannot be executed safely. You can copy and run it in your local environment.")
 
 def display_code_comparison(code1: str, code2: str, language1: str, language2: str, 
                           title1: str = "Original Code", title2: str = "Translated Code"):
@@ -138,7 +132,7 @@ def display_code_with_metadata(code: str, language: str, metadata: dict, title: 
     
     # Display metadata
     if metadata:
-        with st.expander("📊 Code Generation Details", expanded=False):
+        with st.expander("Code Generation Details", expanded=False):
             if "model" in metadata:
                 st.write(f"**Model:** {metadata['model']}")
             if "tokens_used" in metadata and metadata["tokens_used"]:
@@ -156,13 +150,13 @@ def display_error_message(error: str, title: str = "Error"):
         error: Error message
         title: Title for the error section
     """
-    st.error(f"❌ {title}")
+    st.error(f"{title}")
     st.code(error, language="text")
     
     # Provide helpful suggestions
-    st.info("💡 **Troubleshooting Tips:**")
+    st.info("Troubleshooting Tips:")
     st.markdown("""
-    - Check your API keys in the `.env` file
+    - Check your API keys in the .env file
     - Ensure you have a stable internet connection
     - Try a simpler or more specific request
     - Check if the selected language is supported
@@ -176,5 +170,5 @@ def display_success_message(message: str, title: str = "Success"):
         message: Success message
         title: Title for the success section
     """
-    st.success(f"✅ {title}")
+    st.success(f"{title}")
     st.info(message) 

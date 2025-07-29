@@ -6,9 +6,6 @@ Helper functions for parsing, formatting, and other utilities.
 import re
 import logging
 from typing import Dict, Any, List, Optional
-from pygments import highlight
-from pygments.lexers import get_lexer_by_name, TextLexer
-from pygments.formatters import HtmlFormatter
 
 logger = logging.getLogger(__name__)
 
@@ -86,67 +83,6 @@ def get_supported_languages() -> List[str]:
 def get_language_keys() -> List[str]:
     """Get list of supported language keys."""
     return list(SUPPORTED_LANGUAGES.keys())
-
-def highlight_code(code: str, language: str) -> str:
-    """Apply syntax highlighting to code."""
-    try:
-        # Map language names to Pygments lexer names
-        lexer_mapping = {
-            "python": "python",
-            "javascript": "javascript",
-            "java": "java",
-            "cpp": "cpp",
-            "csharp": "csharp",
-            "rust": "rust",
-            "go": "go",
-            "sql": "sql",
-            "bash": "bash",
-            "php": "php",
-            "ruby": "ruby",
-            "swift": "swift",
-            "kotlin": "kotlin",
-            "typescript": "typescript",
-            "html": "html",
-            "css": "css",
-            "scala": "scala",
-            "perl": "perl",
-            "r": "r",
-            "matlab": "matlab",
-            "dart": "dart",
-            "elixir": "elixir",
-            "clojure": "clojure",
-            "haskell": "haskell",
-            "lua": "lua",
-            "assembly": "asm",
-            "fortran": "fortran",
-            "cobol": "cobol",
-            "pascal": "pascal",
-            "basic": "basic",
-            "ada": "ada",
-            "lisp": "lisp",
-            "prolog": "prolog",
-            "erlang": "erlang",
-            "ocaml": "ocaml",
-            "fsharp": "fsharp",
-            "groovy": "groovy",
-            "julia": "julia",
-            "nim": "nim",
-            "zig": "zig",
-            "v": "v",
-            "crystal": "crystal",
-            "odin": "odin",
-            "carbon": "cpp",
-            "mojo": "python"
-        }
-        
-        lexer_name = lexer_mapping.get(language.lower(), "text")
-        lexer = get_lexer_by_name(lexer_name)
-        formatter = HtmlFormatter(style='monokai')
-        highlighted = highlight(code, lexer, formatter)
-        return highlighted
-    except Exception as e:
-        logger.warning(f"Failed to highlight code for {language}: {e}")
-        return code
 
 def extract_code_blocks(text: str) -> List[str]:
     """Extract code blocks from text (markdown-style)."""

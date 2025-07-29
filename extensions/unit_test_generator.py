@@ -38,7 +38,7 @@ def generate_unit_tests(code: str, language: str, model: str = "groq") -> dict:
 
 def display_unit_test_generator():
     """Display the unit test generator interface."""
-    st.header("🧪 Unit Test Generator")
+    st.header("Unit Test Generator")
     
     # Code input
     code = st.text_area(
@@ -53,7 +53,7 @@ def display_unit_test_generator():
     language = language_selector_with_default("python", "unit_test_language")
     
     # Generate button
-    if st.button("🧪 Generate Unit Tests", type="primary", key="unit_test_btn"):
+    if st.button("Generate Unit Tests", type="primary", key="unit_test_btn"):
         if not code:
             st.warning("Please paste some code to generate tests for.")
         elif not language:
@@ -64,17 +64,17 @@ def display_unit_test_generator():
                     result = generate_unit_tests(code, language)
                     
                     if "error" in result:
-                        st.error(f"❌ Failed to generate unit tests: {result['error']}")
+                        st.error(f"Failed to generate unit tests: {result['error']}")
                     else:
                         from components.code_display import display_code
                         display_code(result["code"], language, "Generated Unit Tests")
                         
                         # Show metadata
-                        with st.expander("📊 Test Generation Details", expanded=False):
+                        with st.expander("Test Generation Details", expanded=False):
                             st.write(f"**Model:** {result.get('model', 'Unknown')}")
                             if result.get('tokens_used'):
                                 st.write(f"**Tokens Used:** {result['tokens_used']}")
                             st.write(f"**Language:** {language.title()}")
                         
                 except Exception as e:
-                    st.error(f"❌ Error generating unit tests: {str(e)}") 
+                    st.error(f"Error generating unit tests: {str(e)}") 

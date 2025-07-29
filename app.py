@@ -21,7 +21,7 @@ load_dotenv()
 # Page configuration
 st.set_page_config(
     page_title="AnyLang AI Code Writer",
-    page_icon="🤖",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -77,7 +77,7 @@ def main():
     """Main application function."""
     
     # Header
-    st.markdown('<h1 class="main-header">🤖 AnyLang AI Code Writer</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">AnyLang AI Code Writer</h1>', unsafe_allow_html=True)
     st.markdown('<p class="sub-header">Transform natural language into working code in any programming language</p>', unsafe_allow_html=True)
     
     # Initialize LLM client
@@ -85,10 +85,10 @@ def main():
     
     # Check if any LLM is available
     if not llm_client.is_available():
-        st.error("❌ No LLM clients available. Please check your API keys in the `.env` file.")
+        st.error("No LLM clients available. Please check your API keys in the .env file.")
         st.info("""
         **Setup Instructions:**
-        1. Create a `.env` file in the project root
+        1. Create a .env file in the project root
         2. Add your API keys:
            ```
            GROQ_API_KEY=your_groq_api_key_here
@@ -100,7 +100,7 @@ def main():
     
     # Sidebar
     with st.sidebar:
-        st.header("⚙️ Settings")
+        st.header("Settings")
         
         # Model selection
         available_models = llm_client.get_available_models()
@@ -117,7 +117,7 @@ def main():
         st.info(f"Using: {selected_model.title()}")
         
         # Rate limit information
-        st.header("📊 Rate Limits")
+        st.header("Rate Limits")
         rate_info = llm_client.get_rate_limit_info()
         st.markdown(f"""
         <div class="rate-limit-info">
@@ -125,16 +125,16 @@ def main():
         • <strong>Groq:</strong> {rate_info['groq_free_tier']}<br>
         • <strong>Gemini:</strong> {rate_info['gemini_free_tier']}<br>
         <br>
-        <strong>💡 Tip:</strong> Switch models in the dropdown if you hit limits!
+        <strong>Tip:</strong> Switch models in the dropdown if you hit limits!
         </div>
         """, unsafe_allow_html=True)
         
         # Language info
-        st.header("ℹ️ Language Info")
+        st.header("Language Info")
         language_info_display(st.session_state.get("current_language", ""))
         
         # Features
-        st.header("🚀 Features")
+        st.header("Features")
         st.markdown("""
         - **Code Generation**: Natural language to code
         - **Code Translation**: Convert between languages
@@ -146,11 +146,11 @@ def main():
         """)
     
     # Main content
-    tab1, tab2, tab3, tab4 = st.tabs(["🎯 Code Generation", "🔄 Code Translation", "📖 Code Explanation", "⚡ Code Execution"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Code Generation", "Code Translation", "Code Explanation", "Code Execution"])
     
     # Tab 1: Code Generation
     with tab1:
-        st.header("🎯 Generate Code from Natural Language")
+        st.header("Generate Code from Natural Language")
         
         # Language selection
         language = language_selector_with_default("python", "gen_language")
@@ -165,7 +165,7 @@ def main():
         )
         
         # Generate button
-        if st.button("🚀 Generate Code", type="primary", key="generate_btn"):
+        if st.button("Generate Code", type="primary", key="generate_btn"):
             if not task:
                 st.warning("Please enter a task description.")
             elif not language:
@@ -178,7 +178,7 @@ def main():
                         if "error" in result:
                             # Check if it's a rate limit error
                             if "quota" in result["error"].lower() or "429" in result["error"]:
-                                st.error("🚫 Rate Limit Exceeded")
+                                st.error("Rate Limit Exceeded")
                                 st.info("""
                                 **Solutions:**
                                 1. **Wait a few minutes** and try again
@@ -196,7 +196,7 @@ def main():
                             )
                             
                             # Show metadata
-                            with st.expander("📊 Generation Details", expanded=False):
+                            with st.expander("Generation Details", expanded=False):
                                 st.write(f"**Model:** {result.get('model', 'Unknown')}")
                                 if result.get('tokens_used'):
                                     st.write(f"**Tokens Used:** {result['tokens_used']}")
@@ -211,7 +211,7 @@ def main():
     
     # Tab 2: Code Translation
     with tab2:
-        st.header("🔄 Translate Code Between Languages")
+        st.header("Translate Code Between Languages")
         
         # Language selection
         source_lang, target_lang = dual_language_selector("trans_source", "trans_target")
@@ -225,7 +225,7 @@ def main():
         )
         
         # Translate button
-        if st.button("🔄 Translate Code", type="primary", key="translate_btn"):
+        if st.button("Translate Code", type="primary", key="translate_btn"):
             if not source_code:
                 st.warning("Please paste some code to translate.")
             elif not source_lang or not target_lang:
@@ -239,7 +239,7 @@ def main():
                         
                         if "error" in result:
                             if "quota" in result["error"].lower() or "429" in result["error"]:
-                                st.error("🚫 Rate Limit Exceeded")
+                                st.error("Rate Limit Exceeded")
                                 st.info("Try switching models or wait a few minutes.")
                                 st.code(result["error"], language="text")
                             else:
@@ -256,7 +256,7 @@ def main():
                             )
                             
                             # Show metadata
-                            with st.expander("📊 Translation Details", expanded=False):
+                            with st.expander("Translation Details", expanded=False):
                                 st.write(f"**Model:** {result.get('model', 'Unknown')}")
                                 if result.get('tokens_used'):
                                     st.write(f"**Tokens Used:** {result['tokens_used']}")
@@ -268,7 +268,7 @@ def main():
     
     # Tab 3: Code Explanation
     with tab3:
-        st.header("📖 Explain Code Line by Line")
+        st.header("Explain Code Line by Line")
         
         # Code input
         code_to_explain = st.text_area(
@@ -282,7 +282,7 @@ def main():
         explain_language = language_selector_with_default("python", "explain_language")
         
         # Explain button
-        if st.button("📖 Explain Code", type="primary", key="explain_btn"):
+        if st.button("Explain Code", type="primary", key="explain_btn"):
             if not code_to_explain:
                 st.warning("Please paste some code to explain.")
             elif not explain_language:
@@ -294,7 +294,7 @@ def main():
                         
                         if "error" in result:
                             if "quota" in result["error"].lower() or "429" in result["error"]:
-                                st.error("🚫 Rate Limit Exceeded")
+                                st.error("Rate Limit Exceeded")
                                 st.info("Try switching models or wait a few minutes.")
                                 st.code(result["error"], language="text")
                             else:
@@ -304,11 +304,11 @@ def main():
                             display_code(code_to_explain, explain_language, "Original Code")
                             
                             # Display explanation
-                            st.subheader("📖 Code Explanation")
+                            st.subheader("Code Explanation")
                             st.markdown(result["explanation"])
                             
                             # Show metadata
-                            with st.expander("📊 Explanation Details", expanded=False):
+                            with st.expander("Explanation Details", expanded=False):
                                 st.write(f"**Model:** {result.get('model', 'Unknown')}")
                                 if result.get('tokens_used'):
                                     st.write(f"**Tokens Used:** {result['tokens_used']}")
@@ -319,7 +319,7 @@ def main():
     
     # Tab 4: Code Execution
     with tab4:
-        st.header("⚡ Execute Code Safely")
+        st.header("Execute Code Safely")
         
         from src.utils import is_executable_language
         
@@ -340,13 +340,13 @@ def main():
         
         # Execution info
         if is_executable_language(exec_language):
-            st.info(f"✅ {exec_language.title()} code can be executed safely within the app.")
+            st.info(f"{exec_language.title()} code can be executed safely within the app.")
         else:
-            st.warning(f"❌ {exec_language.title()} code cannot be executed safely.")
+            st.warning(f"{exec_language.title()} code cannot be executed safely.")
             return
         
         # Execute button
-        if st.button("⚡ Execute Code", type="primary", key="execute_btn"):
+        if st.button("Execute Code", type="primary", key="execute_btn"):
             if not code_to_execute:
                 st.warning("Please paste some code to execute.")
             else:
@@ -356,15 +356,15 @@ def main():
                         result = executor.execute_code(code_to_execute, exec_language)
                         
                         if result["success"]:
-                            st.success("✅ Code executed successfully!")
+                            st.success("Code executed successfully!")
                             st.subheader("Output:")
                             st.code(result["output"], language="text")
                             
                             if result.get("error"):
-                                st.warning("⚠️ Warnings/Errors:")
+                                st.warning("Warnings/Errors:")
                                 st.code(result["error"], language="text")
                         else:
-                            st.error("❌ Code execution failed!")
+                            st.error("Code execution failed!")
                             st.code(result["output"], language="text")
                             
                     except Exception as e:

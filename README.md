@@ -91,33 +91,67 @@ The app will be available at `http://localhost:8501`
 - **Frontend**: Streamlit
 - **LLM APIs**: Groq (primary), Google Gemini (fallback)
 - **Code Execution**: Safe sandboxed execution for Python/SQL/Bash
-- **Syntax Highlighting**: Pygments
+- **Syntax Highlighting**: Built-in Streamlit highlighting
 - **Utilities**: Python standard library + requests
 
 ## Project Structure
 
 ```
-anylang_code_writer/
-├── app.py                   # Main Streamlit app
-├── requirements.txt         # Dependencies
-├── README.md               # This file
-├── src/                    # Core business logic
-│   ├── llm_client.py       # API interactions
-│   ├── prompts.py          # LLM prompts
-│   ├── code_executor.py    # Safe code execution
-│   └── utils.py            # Utilities
-├── components/             # UI components
-│   ├── language_selector.py
-│   ├── code_display.py
-│   └── ...
-├── extensions/             # Advanced features
-│   ├── unit_test_generator.py
-│   ├── code_reviewer.py
-│   └── ...
-└── assets/                 # Static assets
-    ├── custom.css
-    └── ...
+AnyLang_AI_Code_Writer/
+├── app.py                 # Main Streamlit application
+├── requirements.txt       # Python dependencies
+├── README.md             # Project documentation
+├── .env.example          # Environment variables template
+├── .gitignore            # Git ignore rules
+├── src/                  # Core business logic
+│   ├── __init__.py
+│   ├── llm_client.py     # LLM API interactions
+│   ├── code_executor.py  # Safe code execution
+│   ├── prompts.py        # Prompt templates
+│   └── utils.py          # Utility functions
+├── components/           # UI components
+│   ├── __init__.py
+│   ├── language_selector.py  # Language selection UI
+│   └── code_display.py   # Code display components
+├── extensions/           # Additional features
+│   ├── __init__.py
+│   └── unit_test_generator.py  # Unit test generation
+└── assets/              # Static assets
+    └── custom.css       # Custom CSS styles
 ```
+
+## Deployment
+
+### Streamlit Cloud
+1. Push your code to GitHub
+2. Connect your repository to [Streamlit Cloud](https://streamlit.io/cloud)
+3. Add your API keys in the Streamlit Cloud dashboard
+4. Deploy automatically
+
+### Local Development
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your API keys
+
+# Run the app
+streamlit run app.py
+```
+
+## Rate Limits
+
+### Free Tier Limits
+- **Groq**: 100 requests/minute
+- **Gemini**: 15 requests/minute
+
+### Solutions for Rate Limits
+1. **Automatic Fallback**: The app automatically switches between APIs
+2. **Manual Switch**: Use the model dropdown in the sidebar
+3. **Wait**: Rate limits reset after a few minutes
+4. **Upgrade**: Consider paid plans for higher limits
 
 ## Contributing
 
@@ -129,11 +163,19 @@ anylang_code_writer/
 
 ## License
 
-MIT License - see LICENSE file for details.
+This project is licensed under the MIT License.
 
 ## Support
 
-For issues and questions:
-- Create an issue on GitHub
-- Check the documentation in the app
-- Review the code examples in the assets folder 
+- **Issues**: Report bugs and feature requests on GitHub
+- **Documentation**: Check the README and inline code comments
+- **API Keys**: Ensure your API keys are correctly set in the .env file
+
+## Changelog
+
+### Version 1.0.0
+- Initial release with core code generation features
+- Support for 40+ programming languages
+- Safe code execution for Python/SQL/Bash
+- Automatic API fallback between Groq and Gemini
+- Rate limit handling and user-friendly error messages 
