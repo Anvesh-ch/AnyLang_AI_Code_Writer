@@ -1,6 +1,6 @@
 """
 AnyLang AI Code Writer - Main Application
-A Streamlit web application that converts natural language to code in any programming language.
+A Streamlit web application that converts natural language requests into working code in any programming language.
 """
 
 import streamlit as st
@@ -62,6 +62,14 @@ st.markdown("""
         border-radius: 0.5rem;
         margin: 1rem 0;
     }
+    .rate-limit-info {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -108,6 +116,19 @@ def main():
         
         st.info(f"Using: {selected_model.title()}")
         
+        # Rate limit information
+        st.header("📊 Rate Limits")
+        rate_info = llm_client.get_rate_limit_info()
+        st.markdown(f"""
+        <div class="rate-limit-info">
+        <strong>Free Tier Limits:</strong><br>
+        • <strong>Groq:</strong> {rate_info['groq_free_tier']}<br>
+        • <strong>Gemini:</strong> {rate_info['gemini_free_tier']}<br>
+        <br>
+        <strong>💡 Tip:</strong> Switch models in the dropdown if you hit limits!
+        </div>
+        """, unsafe_allow_html=True)
+        
         # Language info
         st.header("ℹ️ Language Info")
         language_info_display(st.session_state.get("current_language", ""))
@@ -121,6 +142,7 @@ def main():
         - **Safe Execution**: Run Python/SQL/Bash code
         - **Syntax Highlighting**: Beautiful code display
         - **Copy & Download**: Easy code sharing
+        - **Auto Fallback**: Switches models if one fails
         """)
     
     # Main content
@@ -154,7 +176,18 @@ def main():
                         result = llm_client.generate_code(task, language, selected_model)
                         
                         if "error" in result:
-                            display_error_message(result["error"], "Code Generation Failed")
+                            # Check if it's a rate limit error
+                            if "quota" in result["error"].lower() or "429" in result["error"]:
+                                st.error("🚫 Rate Limit Exceeded")
+                                st.info("""
+                                **Solutions:**
+                                1. **Wait a few minutes** and try again
+                                2. **Switch to the other model** in the sidebar
+                                3. **Upgrade your API plan** for higher limits
+                                """)
+                                st.code(result["error"], language="text")
+                            else:
+                                display_error_message(result["error"], "Code Generation Failed")
                         else:
                             display_code_with_execution(
                                 result["code"], 
@@ -205,7 +238,12 @@ def main():
                         result = llm_client.translate_code(source_code, source_lang, target_lang, selected_model)
                         
                         if "error" in result:
-                            display_error_message(result["error"], "Translation Failed")
+                            if "quota" in result["error"].lower() or "429" in result["error"]:
+                                st.error("🚫 Rate Limit Exceeded")
+                                st.info("Try switching models or wait a few minutes.")
+                                st.code(result["error"], language="text")
+                            else:
+                                display_error_message(result["error"], "Translation Failed")
                         else:
                             # Display comparison
                             display_code_comparison(
@@ -255,7 +293,12 @@ def main():
                         result = llm_client.explain_code(code_to_explain, explain_language, selected_model)
                         
                         if "error" in result:
-                            display_error_message(result["error"], "Explanation Failed")
+                            if "quota" in result["error"].lower() or "429" in result["error"]:
+                                st.error("🚫 Rate Limit Exceeded")
+                                st.info("Try switching models or wait a few minutes.")
+                                st.code(result["error"], language="text")
+                            else:
+                                display_error_message(result["error"], "Explanation Failed")
                         else:
                             # Display the original code
                             display_code(code_to_explain, explain_language, "Original Code")

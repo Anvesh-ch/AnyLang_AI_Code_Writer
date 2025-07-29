@@ -5,6 +5,7 @@ Handles API interactions with Groq and Gemini for code generation tasks.
 
 import os
 import logging
+import time
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 import groq
@@ -48,7 +49,7 @@ class LLMClient:
     
     def generate_code(self, prompt: str, language: str, model: str = "groq") -> Dict[str, Any]:
         """
-        Generate code using the specified LLM.
+        Generate code using the specified LLM with automatic fallback.
         
         Args:
             prompt: The prompt for code generation
@@ -58,26 +59,102 @@ class LLMClient:
         Returns:
             Dict containing the generated code and metadata
         """
-        try:
-            if model == "groq" and self.groq_client:
+        # Try the requested model first
+        if model == "groq" and self.groq_client:
+            try:
                 return self._generate_with_groq(prompt, language)
-            elif model == "gemini" and self.gemini_client:
-                return self._generate_with_gemini(prompt, language)
-            else:
-                # Fallback to available model
-                if self.groq_client:
-                    return self._generate_with_groq(prompt, language)
-                elif self.gemini_client:
-                    return self._generate_with_gemini(prompt, language)
+            except Exception as e:
+                logger.warning(f"Groq failed, trying Gemini: {e}")
+                if self.gemini_client:
+                    try:
+                        return self._generate_with_gemini(prompt, language)
+                    except Exception as gemini_error:
+                        logger.error(f"Both Groq and Gemini failed: {gemini_error}")
+                        return self._create_error_response(str(gemini_error), language, "both")
                 else:
-                    raise Exception("No LLM clients available")
-        except Exception as e:
-            logger.error(f"Error generating code: {e}")
+                    return self._create_error_response(str(e), language, "groq")
+        
+        elif model == "gemini" and self.gemini_client:
+            try:
+                return self._generate_with_gemini(prompt, language)
+            except Exception as e:
+                logger.warning(f"Gemini failed, trying Groq: {e}")
+                if self.groq_client:
+                    try:
+                        return self._generate_with_groq(prompt, language)
+                    except Exception as groq_error:
+                        logger.error(f"Both Gemini and Groq failed: {groq_error}")
+                        return self._create_error_response(str(groq_error), language, "both")
+                else:
+                    return self._create_error_response(str(e), language, "gemini")
+        
+        else:
+            # Auto-select available model
+            if self.groq_client:
+                try:
+                    return self._generate_with_groq(prompt, language)
+                except Exception as e:
+                    logger.error(f"Groq failed: {e}")
+                    if self.gemini_client:
+                        try:
+                            return self._generate_with_gemini(prompt, language)
+                        except Exception as gemini_error:
+                            return self._create_error_response(str(gemini_error), language, "both")
+                    else:
+                        return self._create_error_response(str(e), language, "groq")
+            elif self.gemini_client:
+                try:
+                    return self._generate_with_gemini(prompt, language)
+                except Exception as e:
+                    return self._create_error_response(str(e), language, "gemini")
+            else:
+                return self._create_error_response("No LLM clients available", language, "none")
+    
+    def _create_error_response(self, error_msg: str, language: str, failed_models: str) -> Dict[str, Any]:
+        """Create a standardized error response."""
+        if "quota" in error_msg.lower() or "429" in error_msg:
+            if failed_models == "both":
+                return {
+                    "code": f"""# API Rate Limit Exceeded
+
+Both Groq and Gemini APIs have hit their rate limits.
+
+## Solutions:
+1. **Wait a few minutes** and try again
+2. **Upgrade your API plan** for higher limits
+3. **Use a different API key** if available
+
+## Current Limits:
+- **Groq Free Tier**: 100 requests/minute
+- **Gemini Free Tier**: 15 requests/minute
+
+Error: {error_msg}""",
+                    "language": language,
+                    "model": "error",
+                    "error": error_msg
+                }
+            else:
+                return {
+                    "code": f"""# API Rate Limit Exceeded
+
+The {failed_models.title()} API has hit its rate limit.
+
+## Solutions:
+1. **Wait a few minutes** and try again
+2. **Switch to the other model** in the sidebar
+3. **Upgrade your API plan** for higher limits
+
+Error: {error_msg}""",
+                    "language": language,
+                    "model": "error",
+                    "error": error_msg
+                }
+        else:
             return {
-                "code": f"# Error generating code: {str(e)}\n# Please check your API keys and try again.",
+                "code": f"# Error generating code: {error_msg}\n# Please check your API keys and try again.",
                 "language": language,
-                "model": model,
-                "error": str(e)
+                "model": "error",
+                "error": error_msg
             }
     
     def _generate_with_groq(self, prompt: str, language: str) -> Dict[str, Any]:
@@ -132,7 +209,7 @@ class LLMClient:
     
     def explain_code(self, code: str, language: str, model: str = "groq") -> Dict[str, Any]:
         """
-        Explain code line by line.
+        Explain code line by line with automatic fallback.
         
         Args:
             code: The code to explain
@@ -148,83 +225,12 @@ class LLMClient:
 
 Provide a clear, educational explanation that helps understand what each part does."""
         
-        try:
-            if model == "groq" and self.groq_client:
-                return self._explain_with_groq(code, language)
-            elif model == "gemini" and self.gemini_client:
-                return self._explain_with_gemini(code, language)
-            else:
-                # Fallback
-                if self.groq_client:
-                    return self._explain_with_groq(code, language)
-                elif self.gemini_client:
-                    return self._explain_with_gemini(code, language)
-                else:
-                    raise Exception("No LLM clients available")
-        except Exception as e:
-            logger.error(f"Error explaining code: {e}")
-            return {
-                "explanation": f"Error generating explanation: {str(e)}",
-                "language": language,
-                "model": model,
-                "error": str(e)
-            }
-    
-    def _explain_with_groq(self, code: str, language: str) -> Dict[str, Any]:
-        """Explain code using Groq API."""
-        try:
-            response = self.groq_client.chat.completions.create(
-                model="llama3-70b-8192",  # Updated to current model
-                messages=[
-                    {
-                        "role": "system",
-                        "content": f"You are an expert programming instructor. Explain {language} code in a clear, educational way suitable for beginners."
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Explain this {language} code line by line:\n\n{code}"
-                    }
-                ],
-                temperature=0.3,
-                max_tokens=2048
-            )
-            
-            explanation = response.choices[0].message.content.strip()
-            return {
-                "explanation": explanation,
-                "language": language,
-                "model": "groq-llama3-70b-8192",
-                "tokens_used": response.usage.total_tokens if response.usage else None
-            }
-        except Exception as e:
-            logger.error(f"Groq API error: {e}")
-            raise
-    
-    def _explain_with_gemini(self, code: str, language: str) -> Dict[str, Any]:
-        """Explain code using Gemini API."""
-        try:
-            prompt = f"""You are an expert programming instructor. Explain this {language} code line by line in a clear, educational way suitable for beginners:
-
-{code}
-
-Provide a detailed explanation that helps understand what each part does."""
-            
-            response = self.gemini_client.generate_content(prompt)
-            
-            explanation = response.text.strip()
-            return {
-                "explanation": explanation,
-                "language": language,
-                "model": "gemini-1.5-pro",
-                "tokens_used": None
-            }
-        except Exception as e:
-            logger.error(f"Gemini API error: {e}")
-            raise
+        # Use the same fallback logic as generate_code
+        return self.generate_code(prompt, language, model)
     
     def translate_code(self, code: str, source_language: str, target_language: str, model: str = "groq") -> Dict[str, Any]:
         """
-        Translate code from one language to another.
+        Translate code from one language to another with automatic fallback.
         
         Args:
             code: Source code
@@ -241,82 +247,14 @@ Provide a detailed explanation that helps understand what each part does."""
 
 Write clean, idiomatic {target_language} code that performs the same function."""
         
-        try:
-            if model == "groq" and self.groq_client:
-                return self._translate_with_groq(code, source_language, target_language)
-            elif model == "gemini" and self.gemini_client:
-                return self._translate_with_gemini(code, source_language, target_language)
-            else:
-                # Fallback
-                if self.groq_client:
-                    return self._translate_with_groq(code, source_language, target_language)
-                elif self.gemini_client:
-                    return self._translate_with_gemini(code, source_language, target_language)
-                else:
-                    raise Exception("No LLM clients available")
-        except Exception as e:
-            logger.error(f"Error translating code: {e}")
-            return {
-                "translated_code": f"# Error translating code: {str(e)}",
-                "source_language": source_language,
-                "target_language": target_language,
-                "model": model,
-                "error": str(e)
-            }
-    
-    def _translate_with_groq(self, code: str, source_language: str, target_language: str) -> Dict[str, Any]:
-        """Translate code using Groq API."""
-        try:
-            response = self.groq_client.chat.completions.create(
-                model="llama3-70b-8192",  # Updated to current model
-                messages=[
-                    {
-                        "role": "system",
-                        "content": f"You are an expert programmer. Translate code from {source_language} to {target_language}, preserving functionality and using idiomatic {target_language} style."
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Translate this {source_language} code to {target_language}:\n\n{code}"
-                    }
-                ],
-                temperature=0.1,
-                max_tokens=2048
-            )
-            
-            translated_code = response.choices[0].message.content.strip()
-            return {
-                "translated_code": translated_code,
-                "source_language": source_language,
-                "target_language": target_language,
-                "model": "groq-llama3-70b-8192",
-                "tokens_used": response.usage.total_tokens if response.usage else None
-            }
-        except Exception as e:
-            logger.error(f"Groq API error: {e}")
-            raise
-    
-    def _translate_with_gemini(self, code: str, source_language: str, target_language: str) -> Dict[str, Any]:
-        """Translate code using Gemini API."""
-        try:
-            prompt = f"""You are an expert programmer. Translate this {source_language} code to {target_language}, preserving functionality and using idiomatic {target_language} style:
-
-{code}
-
-Write clean, idiomatic {target_language} code that performs the same function."""
-            
-            response = self.gemini_client.generate_content(prompt)
-            
-            translated_code = response.text.strip()
-            return {
-                "translated_code": translated_code,
-                "source_language": source_language,
-                "target_language": target_language,
-                "model": "gemini-1.5-pro",
-                "tokens_used": None
-            }
-        except Exception as e:
-            logger.error(f"Gemini API error: {e}")
-            raise
+        # Use the same fallback logic as generate_code
+        result = self.generate_code(prompt, target_language, model)
+        
+        # Rename the key for translation
+        if "code" in result:
+            result["translated_code"] = result.pop("code")
+        
+        return result
     
     def is_available(self) -> bool:
         """Check if any LLM client is available."""
@@ -329,4 +267,13 @@ Write clean, idiomatic {target_language} code that performs the same function.""
             models.append("groq")
         if self.gemini_client:
             models.append("gemini")
-        return models 
+        return models
+    
+    def get_rate_limit_info(self) -> Dict[str, Any]:
+        """Get information about current rate limits."""
+        return {
+            "groq_free_tier": "100 requests/minute",
+            "gemini_free_tier": "15 requests/minute",
+            "groq_paid_tier": "1000+ requests/minute",
+            "gemini_paid_tier": "1000+ requests/minute"
+        } 
