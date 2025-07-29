@@ -353,9 +353,27 @@ class CodeExecutor:
                 output = output_buffer.getvalue()
                 error_output = error_buffer.getvalue()
                 
+                # If no output but code executed successfully, try to get the result
+                if not output and not error_output:
+                    # Try to evaluate the last expression if it's a simple one
+                    lines = code.strip().split('\n')
+                    if lines:
+                        last_line = lines[-1].strip()
+                        # If the last line looks like a function call or expression
+                        if '(' in last_line and ')' in last_line and not last_line.startswith('#'):
+                            try:
+                                result = eval(last_line, restricted_globals)
+                                output = f"Result: {result}"
+                            except:
+                                output = "Code executed successfully (no output)"
+                        else:
+                            output = "Code executed successfully (no output)"
+                elif not output:
+                    output = "Code executed successfully (no output)"
+                
                 return {
                     "success": True,
-                    "output": output if output else "Code executed successfully (no output)",
+                    "output": output,
                     "error": error_output if error_output else None,
                     "language": "python"
                 }
@@ -367,7 +385,7 @@ class CodeExecutor:
                 "output": f"Python execution error: {str(e)}",
                 "error": error_output if error_output else str(e),
                 "language": "python"
-            } 
+            }
     
     def _execute_sql(self, code: str) -> Dict[str, Any]:
         """Execute SQL code safely using in-memory SQLite."""
