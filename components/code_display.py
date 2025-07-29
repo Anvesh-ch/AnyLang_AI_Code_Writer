@@ -32,13 +32,18 @@ def display_code(code: str, language: str, title: str = "Generated Code", show_c
     
     with col2:
         if show_copy:
-            # Use a simple approach that works with Streamlit
-            if st.button("Copy", key=f"copy_{title.lower().replace(' ', '_')}"):
-                # Store in session state and show success
-                st.session_state[f"copied_{title.lower().replace(' ', '_')}"] = cleaned_code
-                st.success("Code copied to clipboard!")
-                st.info("Use Ctrl+C (or Cmd+C) to copy the code below:")
-                st.code(cleaned_code, language=language)
+            # Use pyperclip for actual clipboard functionality
+            try:
+                import pyperclip
+                if st.button("Copy", key=f"copy_{title.lower().replace(' ', '_')}"):
+                    pyperclip.copy(cleaned_code)
+                    st.success("Code copied to clipboard!")
+            except ImportError:
+                # Fallback if pyperclip is not available
+                if st.button("Copy", key=f"copy_{title.lower().replace(' ', '_')}"):
+                    st.success("Code copied to clipboard!")
+                    st.info("Use Ctrl+C (or Cmd+C) to copy the code below:")
+                    st.code(cleaned_code, language=language)
     
     with col3:
         if show_download:

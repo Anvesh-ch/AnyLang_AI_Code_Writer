@@ -345,8 +345,38 @@ class CodeExecutor:
                     }
                 }
                 
-                # Execute the code
-                exec(code, restricted_globals)
+                # Check for dangerous patterns that could cause infinite loops
+                dangerous_patterns = ['while True:', 'break', 'continue', 'while 1:', 'for _ in range(999999):']
+                for pattern in dangerous_patterns:
+                    if pattern in code:
+                        return {
+                            "success": False,
+                            "output": f"Code contains potentially dangerous pattern: {pattern}. Please remove loops or break statements.",
+                            "error": f"Pattern '{pattern}' detected",
+                            "language": "python"
+                        }
+                
+                # Execute the code with timeout protection
+                import signal
+                
+                def timeout_handler(signum, frame):
+                    raise TimeoutError("Code execution timed out")
+                
+                # Set a 5-second timeout
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(5)
+                
+                try:
+                    exec(code, restricted_globals)
+                    signal.alarm(0)  # Cancel the alarm
+                except TimeoutError:
+                    signal.alarm(0)  # Cancel the alarm
+                    return {
+                        "success": False,
+                        "output": "Code execution timed out (5 seconds). Please check for infinite loops.",
+                        "error": "Timeout",
+                        "language": "python"
+                    }
                 
                 # Get output
                 output = output_buffer.getvalue()
