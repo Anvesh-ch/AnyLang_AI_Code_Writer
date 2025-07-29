@@ -219,6 +219,7 @@ class CodeExecutor:
                 restricted_globals = {
                     '__builtins__': {
                         'print': print,
+                        'input': input,  # Add input function
                         'len': len,
                         'range': range,
                         'list': list,

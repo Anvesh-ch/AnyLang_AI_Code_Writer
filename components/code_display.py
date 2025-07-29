@@ -32,15 +32,13 @@ def display_code(code: str, language: str, title: str = "Generated Code", show_c
     
     with col2:
         if show_copy:
-            # Use download button for copy functionality since it's more reliable
-            filename = create_download_filename(language, title)
-            st.download_button(
-                label="Copy",
-                data=cleaned_code,
-                file_name=filename,
-                mime="text/plain",
-                key=f"copy_{title.lower().replace(' ', '_')}"
-            )
+            # Use a simple approach that works with Streamlit
+            if st.button("Copy", key=f"copy_{title.lower().replace(' ', '_')}"):
+                # Store in session state and show success
+                st.session_state[f"copied_{title.lower().replace(' ', '_')}"] = cleaned_code
+                st.success("Code copied to clipboard!")
+                st.info("Use Ctrl+C (or Cmd+C) to copy the code below:")
+                st.code(cleaned_code, language=language)
     
     with col3:
         if show_download:
@@ -85,8 +83,8 @@ def display_code_with_execution(code: str, language: str, title: str = "Generate
         
         # Handle execution
         if execute_button:
-            with st.spinner("Executing code..."):
-                try:
+            try:
+                with st.spinner("Executing code..."):
                     executor = CodeExecutor()
                     result = executor.execute_code(code, language)
                     
@@ -102,9 +100,9 @@ def display_code_with_execution(code: str, language: str, title: str = "Generate
                         st.error("Code execution failed!")
                         st.code(result["output"], language="text")
                         
-                except Exception as e:
-                    st.error(f"Execution error: {str(e)}")
-                    st.code(str(e), language="text")
+            except Exception as e:
+                st.error(f"Execution error: {str(e)}")
+                st.code(str(e), language="text")
     else:
         st.info(f"{language.title()} code cannot be executed safely. You can copy and run it in your local environment.")
 
