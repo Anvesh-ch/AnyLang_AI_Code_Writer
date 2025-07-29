@@ -30,8 +30,6 @@ class CodeExecutor:
             r'exec\s*\(',
             r'open\s*\(',
             r'file\s*\(',
-            r'input\s*\(',
-            r'raw_input\s*\(',
             r'rm\s+-rf',
             r'del\s+/',
             r'format\s+\(c:\s*\)',

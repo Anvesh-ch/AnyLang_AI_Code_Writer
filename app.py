@@ -305,7 +305,9 @@ def main():
                             
                             # Display explanation
                             st.subheader("Code Explanation")
-                            st.markdown(result["explanation"])
+                            # The LLM client returns the explanation in the "code" field
+                            explanation_text = result.get("code", result.get("explanation", "No explanation available"))
+                            st.markdown(explanation_text)
                             
                             # Show metadata
                             with st.expander("Explanation Details", expanded=False):

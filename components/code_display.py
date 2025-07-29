@@ -32,10 +32,15 @@ def display_code(code: str, language: str, title: str = "Generated Code", show_c
     
     with col2:
         if show_copy:
-            # Simple copy button without session state issues
-            if st.button("Copy", key=f"copy_{title.lower().replace(' ', '_')}"):
-                st.write("```" + language + "\n" + cleaned_code + "\n```")
-                st.success("Code copied to clipboard!")
+            # Use download button for copy functionality since it's more reliable
+            filename = create_download_filename(language, title)
+            st.download_button(
+                label="Copy",
+                data=cleaned_code,
+                file_name=filename,
+                mime="text/plain",
+                key=f"copy_{title.lower().replace(' ', '_')}"
+            )
     
     with col3:
         if show_download:
