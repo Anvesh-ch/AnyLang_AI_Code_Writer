@@ -146,7 +146,10 @@ def main():
         """)
     
     # Main content
-    tab1, tab2, tab3, tab4 = st.tabs(["Code Generation", "Code Translation", "Code Explanation", "Code Execution"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+        "Code Generation", "Code Translation", "Code Explanation", "Code Execution", 
+        "Code Library", "Semantic Search", "RAG Settings"
+    ])
     
     # Tab 1: Code Generation
     with tab1:
@@ -164,6 +167,30 @@ def main():
             key="task_input"
         )
         
+        # RAG Settings for Code Generation
+        rag_enabled = st.session_state.get('rag_enabled', False)
+        
+        if rag_enabled and 'rag_engine' in st.session_state:
+            rag_engine = st.session_state.rag_engine
+            stats = rag_engine.get_index_stats()
+            
+            if stats['total_chunks'] > 0:
+                st.success(f"RAG Mode Enabled - Using {stats['total_chunks']} code chunks for context")
+                
+                # RAG context options
+                col1, col2 = st.columns(2)
+                with col1:
+                    use_rag = st.checkbox("Use RAG Context", value=True, help="Include relevant code from your codebase")
+                with col2:
+                    context_chunks = st.slider("Context Chunks", 1, 5, 3, help="Number of relevant code chunks to include")
+            else:
+                st.warning("RAG Mode enabled but no code indexed. Upload code in the Code Library tab.")
+                use_rag = False
+                context_chunks = 3
+        else:
+            use_rag = False
+            context_chunks = 3
+        
         # Generate button
         if st.button("Generate Code", type="primary", key="generate_btn"):
             if not task:
@@ -173,7 +200,13 @@ def main():
             else:
                 with st.spinner("Generating code..."):
                     try:
-                        result = llm_client.generate_code(task, language, selected_model)
+                        # Get RAG context if enabled
+                        rag_context = ""
+                        if use_rag and 'rag_engine' in st.session_state:
+                            rag_engine = st.session_state.rag_engine
+                            rag_context = rag_engine.get_code_context(task, context_chunks)
+                        
+                        result = llm_client.generate_code(task, language, selected_model, use_rag, rag_context)
                         
                         if "error" in result:
                             # Check if it's a rate limit error
@@ -201,6 +234,10 @@ def main():
                                 if result.get('tokens_used'):
                                     st.write(f"**Tokens Used:** {result['tokens_used']}")
                                 st.write(f"**Language:** {language.title()}")
+                                if result.get('rag_used'):
+                                    st.write(f"**RAG Used:** Yes")
+                                    if rag_context:
+                                        st.write(f"**Context Chunks:** {context_chunks}")
                             
                             # Store in session state for other tabs
                             st.session_state["generated_code"] = result["code"]
@@ -224,6 +261,22 @@ def main():
             key="translation_input"
         )
         
+        # RAG Settings for Code Translation
+        rag_enabled = st.session_state.get('rag_enabled', False)
+        
+        if rag_enabled and 'rag_engine' in st.session_state:
+            rag_engine = st.session_state.rag_engine
+            stats = rag_engine.get_index_stats()
+            
+            if stats['total_chunks'] > 0:
+                st.success(f"RAG Mode Enabled - Using {stats['total_chunks']} code chunks for context")
+                use_rag = st.checkbox("Use RAG Context", value=True, help="Include relevant code from your codebase", key="trans_rag")
+            else:
+                st.warning("RAG Mode enabled but no code indexed. Upload code in the Code Library tab.")
+                use_rag = False
+        else:
+            use_rag = False
+        
         # Translate button
         if st.button("Translate Code", type="primary", key="translate_btn"):
             if not source_code:
@@ -235,7 +288,13 @@ def main():
             else:
                 with st.spinner("Translating code..."):
                     try:
-                        result = llm_client.translate_code(source_code, source_lang, target_lang, selected_model)
+                        # Get RAG context if enabled
+                        rag_context = ""
+                        if use_rag and 'rag_engine' in st.session_state:
+                            rag_engine = st.session_state.rag_engine
+                            rag_context = rag_engine.get_code_context(f"translate from {source_lang} to {target_lang}", 3)
+                        
+                        result = llm_client.translate_code(source_code, source_lang, target_lang, selected_model, use_rag, rag_context)
                         
                         if "error" in result:
                             if "quota" in result["error"].lower() or "429" in result["error"]:
@@ -262,6 +321,8 @@ def main():
                                     st.write(f"**Tokens Used:** {result['tokens_used']}")
                                 st.write(f"**From:** {source_lang.title()}")
                                 st.write(f"**To:** {target_lang.title()}")
+                                if result.get('rag_used'):
+                                    st.write(f"**RAG Used:** Yes")
                             
                     except Exception as e:
                         display_error_message(str(e), "Translation Error")
@@ -281,6 +342,22 @@ def main():
         # Language for explanation
         explain_language = language_selector_with_default("python", "explain_language")
         
+        # RAG Settings for Code Explanation
+        rag_enabled = st.session_state.get('rag_enabled', False)
+        
+        if rag_enabled and 'rag_engine' in st.session_state:
+            rag_engine = st.session_state.rag_engine
+            stats = rag_engine.get_index_stats()
+            
+            if stats['total_chunks'] > 0:
+                st.success(f"RAG Mode Enabled - Using {stats['total_chunks']} code chunks for context")
+                use_rag = st.checkbox("Use RAG Context", value=True, help="Include relevant code from your codebase", key="explain_rag")
+            else:
+                st.warning("RAG Mode enabled but no code indexed. Upload code in the Code Library tab.")
+                use_rag = False
+        else:
+            use_rag = False
+        
         # Explain button
         if st.button("Explain Code", type="primary", key="explain_btn"):
             if not code_to_explain:
@@ -290,7 +367,13 @@ def main():
             else:
                 with st.spinner("Generating explanation..."):
                     try:
-                        result = llm_client.explain_code(code_to_explain, explain_language, selected_model)
+                        # Get RAG context if enabled
+                        rag_context = ""
+                        if use_rag and 'rag_engine' in st.session_state:
+                            rag_engine = st.session_state.rag_engine
+                            rag_context = rag_engine.get_code_context(f"explain {explain_language} code", 3)
+                        
+                        result = llm_client.explain_code(code_to_explain, explain_language, selected_model, use_rag, rag_context)
                         
                         if "error" in result:
                             if "quota" in result["error"].lower() or "429" in result["error"]:
@@ -315,6 +398,8 @@ def main():
                                 if result.get('tokens_used'):
                                     st.write(f"**Tokens Used:** {result['tokens_used']}")
                                 st.write(f"**Language:** {explain_language.title()}")
+                                if result.get('rag_used'):
+                                    st.write(f"**RAG Used:** Yes")
                             
                     except Exception as e:
                         display_error_message(str(e), "Explanation Error")
@@ -371,6 +456,21 @@ def main():
                             
                     except Exception as e:
                         display_error_message(str(e), "Execution Error")
+    
+    # Tab 5: Code Library
+    with tab5:
+        from components.code_library_tab import code_library_tab
+        code_library_tab()
+    
+    # Tab 6: Semantic Search
+    with tab6:
+        from components.code_search_tab import code_search_tab
+        code_search_tab()
+    
+    # Tab 7: RAG Settings
+    with tab7:
+        from components.rag_settings import rag_settings_tab
+        rag_settings_tab()
 
 if __name__ == "__main__":
     main() 

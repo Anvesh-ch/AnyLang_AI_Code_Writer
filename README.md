@@ -1,6 +1,6 @@
 # AnyLang AI Code Writer
 
-A powerful Streamlit web application that converts natural language requests into working code in any programming language. Built with free LLM APIs (Groq and Gemini) for code generation, translation, and explanation.
+A powerful Streamlit web application that converts natural language requests into working code in any programming language. Built with free LLM APIs (Groq and Gemini) and enhanced with RAG (Retrieval-Augmented Generation) for personalized, grounded code generation.
 
 ## Features
 
@@ -12,6 +12,14 @@ A powerful Streamlit web application that converts natural language requests int
 - **Code Translation**: Translate code between different programming languages
 - **Syntax Highlighting**: Beautiful code display with proper syntax highlighting
 - **Safe Code Execution**: Run Python/SQL/Bash code safely within the app
+
+### RAG-Enhanced Features
+- **Personal Code Library**: Upload your own code files for personalized generation
+- **Semantic Code Search**: Search your codebase using natural language queries
+- **Grounded Code Generation**: Generate code that matches your coding style and patterns
+- **Context-Aware Translation**: Translate code while preserving your project's conventions
+- **Style-Consistent Explanations**: Get explanations that reference your existing code patterns
+- **Local Vector Database**: All embeddings and search stored locally for privacy
 
 ### Advanced Features
 - **Unit Test Generator**: Auto-generate unit tests for your code
@@ -68,6 +76,13 @@ The app will be available at `http://localhost:8501`
 2. Select source and target languages
 3. Click "Translate" to convert between languages
 
+### RAG-Enhanced Usage
+1. **Upload Your Code**: Go to the "Code Library" tab and upload your code files
+2. **Enable RAG Mode**: Go to "RAG Settings" and enable RAG mode
+3. **Search Your Code**: Use "Semantic Search" to find relevant code in your codebase
+4. **Generate Grounded Code**: Your code generation will now use your codebase for context
+5. **Style-Consistent Results**: Generated code will match your coding patterns and conventions
+
 ### Advanced Features
 - **Unit Tests**: Click "Generate Tests" to create unit tests for your code
 - **Code Review**: Use "Review Code" for senior developer feedback
@@ -90,6 +105,10 @@ The app will be available at `http://localhost:8501`
 
 - **Frontend**: Streamlit
 - **LLM APIs**: Groq (primary), Google Gemini (fallback)
+- **RAG Components**: 
+  - **Embeddings**: SentenceTransformers (all-MiniLM-L6-v2)
+  - **Vector Database**: FAISS (local storage)
+  - **Code Chunking**: Language-specific parsers (AST for Python, regex for others)
 - **Code Execution**: Safe sandboxed execution for Python/SQL/Bash
 - **Syntax Highlighting**: Built-in Streamlit highlighting
 - **Utilities**: Python standard library + requests
@@ -98,26 +117,34 @@ The app will be available at `http://localhost:8501`
 
 ```
 AnyLang_AI_Code_Writer/
-├── app.py                 # Main Streamlit application
-├── requirements.txt       # Python dependencies
-├── README.md             # Project documentation
-├── .env.example          # Environment variables template
-├── .gitignore            # Git ignore rules
-├── src/                  # Core business logic
+├── app.py                          # Main Streamlit application
+├── requirements.txt                 # Python dependencies
+├── README.md                       # Project documentation
+├── .env.example                    # Environment variables template
+├── .gitignore                      # Git ignore rules
+├── code_library/                   # RAG storage directory (NEW)
+│   ├── user_uploads/              # User uploaded code files
+│   ├── embeddings/                # Generated embeddings
+│   └── vector_db/                 # FAISS index and metadata
+├── src/                           # Core application logic
 │   ├── __init__.py
-│   ├── llm_client.py     # LLM API interactions
-│   ├── code_executor.py  # Safe code execution
-│   ├── prompts.py        # Prompt templates
-│   └── utils.py          # Utility functions
-├── components/           # UI components
+│   ├── llm_client.py              # LLM API integration (Groq/Gemini)
+│   ├── rag_engine.py              # RAG functionality (NEW)
+│   ├── code_executor.py           # Safe code execution
+│   ├── prompts.py                 # Prompt templates (enhanced with RAG)
+│   └── utils.py                   # Utility functions
+├── components/                     # UI components
 │   ├── __init__.py
-│   ├── language_selector.py  # Language selection UI
-│   └── code_display.py   # Code display components
-├── extensions/           # Additional features
+│   ├── language_selector.py       # Language selection widgets
+│   ├── code_display.py            # Code display components
+│   ├── code_library_tab.py       # Code library management (NEW)
+│   ├── code_search_tab.py        # Semantic search interface (NEW)
+│   └── rag_settings.py           # RAG configuration (NEW)
+├── extensions/                     # Additional features
 │   ├── __init__.py
-│   └── unit_test_generator.py  # Unit test generation
-└── assets/              # Static assets
-    └── custom.css       # Custom CSS styles
+│   └── unit_test_generator.py    # Unit test generation
+└── assets/                        # Static assets
+    └── custom.css                 # Custom CSS styles
 ```
 
 ## Deployment
@@ -172,6 +199,15 @@ This project is licensed under the MIT License.
 - **API Keys**: Ensure your API keys are correctly set in the .env file
 
 ## Changelog
+
+### Version 2.0.0
+- **RAG Integration**: Added Retrieval-Augmented Generation for personalized code generation
+- **Code Library**: Upload and manage your own code files
+- **Semantic Search**: Search your codebase using natural language queries
+- **Grounded Generation**: Generate code that matches your coding style and patterns
+- **Local Vector Database**: FAISS-based local storage for privacy
+- **Enhanced Prompts**: RAG-enhanced prompts for better context-aware generation
+- **Code Context**: Include relevant code snippets in generation and translation
 
 ### Version 1.0.0
 - Initial release with core code generation features

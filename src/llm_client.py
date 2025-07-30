@@ -47,14 +47,16 @@ class LLMClient:
             except Exception as e:
                 logger.error(f"Failed to initialize Gemini client: {e}")
     
-    def generate_code(self, prompt: str, language: str, model: str = "groq") -> Dict[str, Any]:
+    def generate_code(self, prompt: str, language: str, model: str = "groq", use_rag: bool = False, rag_context: str = "") -> Dict[str, Any]:
         """
-        Generate code using the specified LLM with automatic fallback.
+        Generate code using the specified LLM with automatic fallback and optional RAG.
         
         Args:
             prompt: The prompt for code generation
             language: Target programming language
             model: Which model to use ("groq" or "gemini")
+            use_rag: Whether to use RAG-enhanced prompts
+            rag_context: Code context from user's codebase
         
         Returns:
             Dict containing the generated code and metadata
@@ -62,12 +64,12 @@ class LLMClient:
         # Try the requested model first
         if model == "groq" and self.groq_client:
             try:
-                return self._generate_with_groq(prompt, language)
+                return self._generate_with_groq(prompt, language, use_rag, rag_context)
             except Exception as e:
                 logger.warning(f"Groq failed, trying Gemini: {e}")
                 if self.gemini_client:
                     try:
-                        return self._generate_with_gemini(prompt, language)
+                        return self._generate_with_gemini(prompt, language, use_rag, rag_context)
                     except Exception as gemini_error:
                         logger.error(f"Both Groq and Gemini failed: {gemini_error}")
                         return self._create_error_response(str(gemini_error), language, "both")
@@ -76,12 +78,12 @@ class LLMClient:
         
         elif model == "gemini" and self.gemini_client:
             try:
-                return self._generate_with_gemini(prompt, language)
+                return self._generate_with_gemini(prompt, language, use_rag, rag_context)
             except Exception as e:
                 logger.warning(f"Gemini failed, trying Groq: {e}")
                 if self.groq_client:
                     try:
-                        return self._generate_with_groq(prompt, language)
+                        return self._generate_with_groq(prompt, language, use_rag, rag_context)
                     except Exception as groq_error:
                         logger.error(f"Both Gemini and Groq failed: {groq_error}")
                         return self._create_error_response(str(groq_error), language, "both")
@@ -92,19 +94,19 @@ class LLMClient:
             # Auto-select available model
             if self.groq_client:
                 try:
-                    return self._generate_with_groq(prompt, language)
+                    return self._generate_with_groq(prompt, language, use_rag, rag_context)
                 except Exception as e:
                     logger.error(f"Groq failed: {e}")
                     if self.gemini_client:
                         try:
-                            return self._generate_with_gemini(prompt, language)
+                            return self._generate_with_gemini(prompt, language, use_rag, rag_context)
                         except Exception as gemini_error:
                             return self._create_error_response(str(gemini_error), language, "both")
                     else:
                         return self._create_error_response(str(e), language, "groq")
             elif self.gemini_client:
                 try:
-                    return self._generate_with_gemini(prompt, language)
+                    return self._generate_with_gemini(prompt, language, use_rag, rag_context)
                 except Exception as e:
                     return self._create_error_response(str(e), language, "gemini")
             else:
@@ -157,20 +159,32 @@ Error: {error_msg}""",
                 "error": error_msg
             }
     
-    def _generate_with_groq(self, prompt: str, language: str) -> Dict[str, Any]:
-        """Generate code using Groq API."""
+    def _generate_with_groq(self, prompt: str, language: str, use_rag: bool = False, rag_context: str = "") -> Dict[str, Any]:
+        """Generate code using Groq API with optional RAG enhancement."""
         try:
+            # Import prompts module for RAG functionality
+            from src.prompts import get_rag_enhanced_prompt
+            
+            if use_rag and rag_context:
+                # Use RAG-enhanced prompt
+                enhanced_prompt = get_rag_enhanced_prompt('code_generation', task=prompt, language=language, code_context=rag_context)
+                system_content = f"You are an expert programmer. Write clean, idiomatic code in {language}. Follow the style and patterns shown in the provided code examples. Add concise comments for clarity. Output only the code block, no extra explanation."
+            else:
+                # Use standard prompt
+                enhanced_prompt = prompt
+                system_content = f"You are an expert programmer. Write clean, idiomatic code in {language}. Add concise comments for clarity. Output only the code block, no extra explanation."
+            
             # Use llama3-70b-8192 (current recommended model) instead of decommissioned mixtral-8x7b-32768
             response = self.groq_client.chat.completions.create(
                 model="llama3-70b-8192",  # Updated to current model
                 messages=[
                     {
                         "role": "system",
-                        "content": f"You are an expert programmer. Write clean, idiomatic code in {language}. Add concise comments for clarity. Output only the code block, no extra explanation."
+                        "content": system_content
                     },
                     {
                         "role": "user",
-                        "content": prompt
+                        "content": enhanced_prompt
                     }
                 ],
                 temperature=0.1,
@@ -182,17 +196,29 @@ Error: {error_msg}""",
                 "code": code,
                 "language": language,
                 "model": "groq-llama3-70b-8192",
-                "tokens_used": response.usage.total_tokens if response.usage else None
+                "tokens_used": response.usage.total_tokens if response.usage else None,
+                "rag_used": use_rag
             }
         except Exception as e:
             logger.error(f"Groq API error: {e}")
             raise
     
-    def _generate_with_gemini(self, prompt: str, language: str) -> Dict[str, Any]:
-        """Generate code using Gemini API."""
+    def _generate_with_gemini(self, prompt: str, language: str, use_rag: bool = False, rag_context: str = "") -> Dict[str, Any]:
+        """Generate code using Gemini API with optional RAG enhancement."""
         try:
-            system_prompt = f"You are an expert programmer. Write clean, idiomatic code in {language}. Add concise comments for clarity. Output only the code block, no extra explanation."
-            full_prompt = f"{system_prompt}\n\nTask: {prompt}"
+            # Import prompts module for RAG functionality
+            from src.prompts import get_rag_enhanced_prompt
+            
+            if use_rag and rag_context:
+                # Use RAG-enhanced prompt
+                enhanced_prompt = get_rag_enhanced_prompt('code_generation', task=prompt, language=language, code_context=rag_context)
+                system_prompt = f"You are an expert programmer. Write clean, idiomatic code in {language}. Follow the style and patterns shown in the provided code examples. Add concise comments for clarity. Output only the code block, no extra explanation."
+            else:
+                # Use standard prompt
+                enhanced_prompt = prompt
+                system_prompt = f"You are an expert programmer. Write clean, idiomatic code in {language}. Add concise comments for clarity. Output only the code block, no extra explanation."
+            
+            full_prompt = f"{system_prompt}\n\nTask: {enhanced_prompt}"
             
             response = self.gemini_client.generate_content(full_prompt)
             
@@ -201,54 +227,69 @@ Error: {error_msg}""",
                 "code": code,
                 "language": language,
                 "model": "gemini-1.5-pro",
-                "tokens_used": None  # Gemini doesn't provide token usage in free tier
+                "tokens_used": None,  # Gemini doesn't provide token usage in free tier
+                "rag_used": use_rag
             }
         except Exception as e:
             logger.error(f"Gemini API error: {e}")
             raise
     
-    def explain_code(self, code: str, language: str, model: str = "groq") -> Dict[str, Any]:
+    def explain_code(self, code: str, language: str, model: str = "groq", use_rag: bool = False, rag_context: str = "") -> Dict[str, Any]:
         """
-        Explain code line by line with automatic fallback.
+        Explain code line by line with automatic fallback and optional RAG.
         
         Args:
             code: The code to explain
             language: Programming language of the code
             model: Which model to use
+            use_rag: Whether to use RAG-enhanced prompts
+            rag_context: Code context from user's codebase
         
         Returns:
             Dict containing the explanation
         """
-        prompt = f"""Explain the following {language} code line by line in plain English, suitable for a beginner:
+        from src.prompts import get_rag_enhanced_prompt
+        
+        if use_rag and rag_context:
+            prompt = get_rag_enhanced_prompt('code_explanation', code=code, language=language, code_context=rag_context)
+        else:
+            prompt = f"""Explain the following {language} code line by line in plain English, suitable for a beginner:
 
 {code}
 
 Provide a clear, educational explanation that helps understand what each part does."""
         
         # Use the same fallback logic as generate_code
-        return self.generate_code(prompt, language, model)
+        return self.generate_code(prompt, language, model, use_rag, rag_context)
     
-    def translate_code(self, code: str, source_language: str, target_language: str, model: str = "groq") -> Dict[str, Any]:
+    def translate_code(self, code: str, source_language: str, target_language: str, model: str = "groq", use_rag: bool = False, rag_context: str = "") -> Dict[str, Any]:
         """
-        Translate code from one language to another with automatic fallback.
+        Translate code from one language to another with automatic fallback and optional RAG.
         
         Args:
             code: Source code
             source_language: Original programming language
             target_language: Target programming language
             model: Which model to use
+            use_rag: Whether to use RAG-enhanced prompts
+            rag_context: Code context from user's codebase
         
         Returns:
             Dict containing the translated code
         """
-        prompt = f"""Translate the following code from {source_language} to {target_language}, preserving functionality and idiomatic style:
+        from src.prompts import get_rag_enhanced_prompt
+        
+        if use_rag and rag_context:
+            prompt = get_rag_enhanced_prompt('code_translation', code=code, source_language=source_language, target_language=target_language, code_context=rag_context)
+        else:
+            prompt = f"""Translate the following code from {source_language} to {target_language}, preserving functionality and idiomatic style:
 
 {code}
 
 Write clean, idiomatic {target_language} code that performs the same function."""
         
         # Use the same fallback logic as generate_code
-        result = self.generate_code(prompt, target_language, model)
+        result = self.generate_code(prompt, target_language, model, use_rag, rag_context)
         
         # Rename the key for translation
         if "code" in result:
