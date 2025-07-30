@@ -327,23 +327,25 @@ class RAGEngine:
     """Main RAG engine for code search and retrieval."""
     
     def __init__(self, storage_path: str = "code_library"):
+        """Initialize RAG engine with storage paths."""
         self.storage_path = Path(storage_path)
+        self.embeddings_path = self.storage_path / "embeddings"
+        self.vector_db_path = self.storage_path / "vector_db"
+        self.user_uploads_path = self.storage_path / "user_uploads"
+        
+        # Create directories if they don't exist
         self.storage_path.mkdir(exist_ok=True)
+        self.embeddings_path.mkdir(exist_ok=True)
+        self.vector_db_path.mkdir(exist_ok=True)
+        self.user_uploads_path.mkdir(exist_ok=True)
         
         # Initialize components
         self.chunker = CodeChunker()
-        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-        
-        # Initialize vector database
-        self.vector_db_path = self.storage_path / "vector_db"
-        self.vector_db_path.mkdir(exist_ok=True)
-        
-        # Initialize FAISS index
-        self.index_path = self.vector_db_path / "faiss_index"
-        self.metadata_path = self.vector_db_path / "metadata.json"
-        
+        self.model = SentenceTransformer('all-MiniLM-L6-v2')
         self.index = None
         self.metadata = []
+        
+        # Load existing index
         self._load_index()
     
     def _load_index(self):

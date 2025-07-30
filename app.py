@@ -15,6 +15,25 @@ from components.code_display import (
     display_code_with_metadata, display_error_message, display_success_message
 )
 
+# Import RAG components with error handling
+try:
+    from components.code_library_tab import code_library_tab
+    from components.code_search_tab import code_search_tab
+    from components.rag_settings import rag_settings_tab
+    RAG_AVAILABLE = True
+except ImportError as e:
+    RAG_AVAILABLE = False
+    # Create placeholder functions
+    def code_library_tab():
+        st.error("Code Library component not available")
+        st.info("RAG features require additional dependencies. Please check the installation.")
+    def code_search_tab():
+        st.error("Code Search component not available")
+        st.info("RAG features require additional dependencies. Please check the installation.")
+    def rag_settings_tab():
+        st.error("RAG Settings component not available")
+        st.info("RAG features require additional dependencies. Please check the installation.")
+
 # Load environment variables
 load_dotenv()
 
@@ -459,7 +478,6 @@ def main():
     
     # Tab 5: Code Library
     with tab5:
-        from components.code_library_tab import code_library_tab
         code_library_tab()
     
     # Tab 6: Semantic Search
