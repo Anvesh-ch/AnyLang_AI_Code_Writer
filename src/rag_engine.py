@@ -16,8 +16,6 @@ from pathlib import Path
 import numpy as np
 from sentence_transformers import SentenceTransformer
 import faiss
-import chromadb
-from chromadb.config import Settings
 
 logger = logging.getLogger(__name__)
 
