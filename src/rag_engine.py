@@ -348,6 +348,10 @@ class RAGEngine:
     
     def _load_index(self):
         """Load existing FAISS index and metadata."""
+        # Define index and metadata paths
+        self.index_path = self.vector_db_path / "faiss_index.bin"
+        self.metadata_path = self.vector_db_path / "metadata.json"
+        
         try:
             if self.index_path.exists() and self.metadata_path.exists():
                 self.index = faiss.read_index(str(self.index_path))
@@ -356,13 +360,13 @@ class RAGEngine:
                 logger.info(f"Loaded existing index with {len(self.metadata)} chunks")
             else:
                 # Create new index
-                dimension = self.embedding_model.get_sentence_embedding_dimension()
+                dimension = self.model.get_sentence_embedding_dimension()
                 self.index = faiss.IndexFlatIP(dimension)
                 self.metadata = []
                 logger.info("Created new FAISS index")
         except Exception as e:
             logger.error(f"Error loading index: {e}")
-            dimension = self.embedding_model.get_sentence_embedding_dimension()
+            dimension = self.model.get_sentence_embedding_dimension()
             self.index = faiss.IndexFlatIP(dimension)
             self.metadata = []
     
@@ -446,7 +450,7 @@ class RAGEngine:
                 text_for_embedding = f"{chunk['name']} {chunk['type']} {chunk['code']}"
                 
                 # Generate embedding
-                embedding = self.embedding_model.encode([text_for_embedding])[0]
+                embedding = self.model.encode([text_for_embedding])[0]
                 
                 # Add to FAISS index
                 self.index.add(np.array([embedding], dtype=np.float32))
@@ -483,7 +487,7 @@ class RAGEngine:
         
         try:
             # Generate query embedding
-            query_embedding = self.embedding_model.encode([query])[0]
+            query_embedding = self.model.encode([query])[0]
             
             # Search the index
             scores, indices = self.index.search(
@@ -525,7 +529,7 @@ class RAGEngine:
     def clear_index(self):
         """Clear the entire index."""
         try:
-            dimension = self.embedding_model.get_sentence_embedding_dimension()
+            dimension = self.model.get_sentence_embedding_dimension()
             self.index = faiss.IndexFlatIP(dimension)
             self.metadata = []
             self._save_index()
