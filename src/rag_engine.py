@@ -339,7 +339,16 @@ class RAGEngine:
         
         # Initialize components
         self.chunker = CodeChunker()
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
+        
+        # Initialize the embedding model with error handling
+        try:
+            logger.info("Loading SentenceTransformer model...")
+            self.model = SentenceTransformer('all-MiniLM-L6-v2')
+            logger.info("SentenceTransformer model loaded successfully")
+        except Exception as e:
+            logger.error(f"Failed to load SentenceTransformer model: {e}")
+            raise RuntimeError(f"Failed to initialize embedding model: {e}. This might be due to network issues or insufficient memory.")
+        
         self.index = None
         self.metadata = []
         

@@ -65,21 +65,66 @@ def code_library_tab():
     if uploaded_files:
         if st.button("Process Files", type="primary"):
             with st.spinner("Processing files and generating embeddings..."):
-                result = rag_engine.process_uploaded_files(uploaded_files)
-                
-                # Display results
-                st.success(f"Processed {len(uploaded_files)} files!")
-                st.info(f"Added {result['total_chunks_added']} code chunks to the index")
-                
-                # Show detailed results
-                with st.expander("Processing Details"):
-                    for file_result in result['processed_files']:
-                        if file_result['status'] == 'success':
-                            st.success(f"{file_result['filename']}: {file_result['chunks_added']} chunks added")
-                        elif file_result['status'] == 'skipped':
-                            st.warning(f"{file_result['filename']}: {file_result['reason']}")
-                        else:
-                            st.error(f"{file_result['filename']}: {file_result['error']}")
+                try:
+                    # Add progress reporting
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    
+                    # Initialize RAG engine with progress
+                    status_text.text("Initializing RAG engine...")
+                    rag_engine = st.session_state.rag_engine
+                    
+                    # Process files with progress
+                    total_files = len(uploaded_files)
+                    for i, uploaded_file in enumerate(uploaded_files):
+                        status_text.text(f"Processing {uploaded_file.name} ({i+1}/{total_files})...")
+                        progress_bar.progress((i + 1) / total_files)
+                    
+                    # Process all files with timeout
+                    status_text.text("Generating embeddings and updating index...")
+                    
+                    # Add a timeout warning
+                    st.info("Note: First-time model loading may take 1-2 minutes. Please be patient.")
+                    
+                    result = rag_engine.process_uploaded_files(uploaded_files)
+                    
+                    # Update progress
+                    progress_bar.progress(1.0)
+                    status_text.text("Processing complete!")
+                    
+                    # Display results
+                    st.success(f"Processed {len(uploaded_files)} files!")
+                    st.info(f"Added {result['total_chunks_added']} code chunks to the index")
+                    
+                    # Show detailed results
+                    with st.expander("Processing Details"):
+                        for file_result in result['processed_files']:
+                            if file_result['status'] == 'success':
+                                st.success(f"{file_result['filename']}: {file_result['chunks_added']} chunks added")
+                            elif file_result['status'] == 'skipped':
+                                st.warning(f"{file_result['filename']}: {file_result['reason']}")
+                            else:
+                                st.error(f"{file_result['filename']}: {file_result['error']}")
+                    
+                    # Clear progress indicators
+                    progress_bar.empty()
+                    status_text.empty()
+                    
+                except Exception as e:
+                    st.error(f"Error during processing: {str(e)}")
+                    st.info("This might be due to network issues downloading the embedding model. Please try again.")
+                    st.code(f"Technical details: {type(e).__name__}: {e}")
+                    
+                    # Provide troubleshooting tips
+                    with st.expander("Troubleshooting Tips"):
+                        st.markdown("""
+                        **If processing is taking too long or failing:**
+                        1. **Check your internet connection** - The embedding model needs to be downloaded
+                        2. **Try with smaller files first** - Large files may take longer to process
+                        3. **Refresh the page** and try again
+                        4. **Check the browser console** for any error messages
+                        5. **Try a different browser** if issues persist
+                        """)
     
     # Index statistics
     st.subheader("Code Library Statistics")
